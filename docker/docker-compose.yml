@@ -3,6 +3,8 @@ version: "3.7"
 networks:
   kong-fc:
     external: false
+  keycloak:
+      external: false
 
 volumes:
   postgres_data:
@@ -10,11 +12,16 @@ volumes:
 
 services:
 
+  ###
+  ### Banco de dados
+  ### Nesse momento estamos usando o modelo de deployment com banco de dados, o que indica
+  ### que as configuracoes a.k.a rotas,servicos e plugins ficam persistidas nele
+  ###
   kong-database:
-    image: postgres:9.5
+    image: postgres:14.5
     deploy:
       restart_policy:
-        condition: any
+        condition: on-failure
     networks:
       - kong-fc
     environment:
@@ -27,8 +34,17 @@ services:
       timeout: 5s
       retries: 5
 
-  kong-migrations:
-    image: kong/kong-gateway:2.8.1.3-alpine
+  ###
+  ### Inicio do banco de dados
+  ### Esse container ira realizar as criacoes iniciais das tabelas necessarias para
+  ### armazenamento das configuracoes do Kong
+  ###
+  kong-migration-bootstrap:
+    build:
+      context: ./kong
+    deploy:
+      restart_policy:
+        condition: on-failure
     networks:
       - kong-fc
     depends_on:
@@ -41,17 +57,40 @@ services:
     command: kong migrations bootstrap
 
   ###
+  ### Inicio do banco de dados
+  ### Esse container ira realizar as configuracoes iniciais das tabelas necessarias para
+  ### armazenamento das configuracoes do Kong
+  ###
+  kong-migration-up:
+    build:
+      context: ./kong
+    networks:
+      - kong-fc
+    deploy:
+      restart_policy:
+        condition: on-failure
+    depends_on:
+      - kong-database
+    environment:
+      - KONG_DATABASE=postgres
+      - KONG_PG_HOST=kong-database
+      - KONG_PG_USER=kong
+      - KONG_PG_PASSWORD=kong
+    command: kong migrations up
+
+  ###
   ### Kong API Gateway
   ### Container com o runtime do Kong API Gateway
   ###
   kong:
     container_name: kong
-    image: kong/kong-gateway:2.8.1.3-alpine
+    build:
+      context: ./kong
     networks:
       - kong-fc
     deploy:
       restart_policy:
-        condition: any
+        condition: on-failure
     depends_on:
       - kong-database
     environment:
@@ -68,24 +107,20 @@ services:
       - KONG_ADMIN_LISTEN=0.0.0.0:8001
       - KONG_REAL_IP_RECURSIVE=on
       - KONG_NGINX_HTTP_RESOLVER=8.8.8.8
-      - KONG_PLUGINS=bundled
+      - KONG_PLUGINS=bundled,oidc,kong-jwt2header
     ports:
-      - "8000:8000"
-      - "8443:8443"
+      - "81:8000"
+      - "443:8443"
       - "8001:8001"
-      - "8444:8444"
-      - "8002:8002"
-      - "8445:8445"
-      - "8003:8003"
-      - "8004:8004"
     healthcheck:
       test: ["CMD", "wget", "-O-", "http://kong:8001/status"]
       interval: 5s
       retries: 10
     restart: on-failure
 
+
   postgres:
-    image: postgres
+    image: postgres:14.5
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
@@ -94,6 +129,7 @@ services:
       POSTGRES_PASSWORD: password
     networks:
       - kong-fc
+      - keycloak
 
   keycloak:
     image: quay.io/keycloak/keycloak:legacy
@@ -112,6 +148,7 @@ services:
       - postgres
     networks:
       - kong-fc
+      - keycloak
 
   ###
   ### Konga
@@ -131,6 +168,25 @@ services:
     ports:
       - "1337:1337"
 
+  php:
+    build:
+      context: ./php
+    volumes:
+      - ${PWD}/../laraveltest:/var/www/html
+    ports:
+      - "9000:9000"
+    networks:
+      - kong-fc
+
+  install-dependencies:
+    build:
+      context: ./php
+    volumes:
+      - ${PWD}/../laraveltest:/var/www/html
+    command: bash -c "composer update --no-interaction"
+    depends_on:
+      - php
+
   nginx:
     image: nginx:stable-alpine
     ports:
@@ -143,39 +199,3 @@ services:
     networks:
       - kong-fc
 
-
-  postgresApp:
-    image: postgres:14.2-alpine
-    restart: unless-stopped
-    tty: true
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./postgres/data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=app
-      - POSTGRES_USER=userapp
-      - POSTGRES_PASSWORD=12qwaszx
-    networks:
-      - kong-fc
-
-  php:
-    build:
-      context: ../docker
-      dockerfile: DockerfilePhp
-    volumes:
-      - ${PWD}/../laraveltest:/var/www/html
-    ports:
-      - "9000:9000"
-    networks:
-      - kong-fc
-
-  install-dependencies:
-    build:
-      context: ../docker
-      dockerfile: DockerfilePhpDependencies
-    volumes:
-      - ${PWD}/../laraveltest:/var/www/html
-    command: bash -c "composer update --no-interaction"
-    depends_on:
-      - php

@@ -1,5 +1,9 @@
 FROM php:8.1-fpm-alpine
 
+WORKDIR /var/www/html
+
+RUN apk add bash
+
 RUN set -ex \
     && apk --no-cache add \
     postgresql-dev
