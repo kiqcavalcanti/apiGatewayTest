@@ -6,6 +6,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -41,4 +43,31 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function hasRole(string $role) {
+
+        $resource = Config::get('keycloak.allowed_resources');
+
+        if(count(explode(',', $resource)) > 1) {
+            throw new \DomainException('Only one Resource is allowed');
+        }
+
+        return Auth::hasRole($resource, $role);
+    }
+
+    public function roles() {
+
+        $resource = Config::get('keycloak.allowed_resources');
+
+        if(count(explode(',', $resource)) > 1) {
+            throw new \DomainException('Only one Resource is allowed');
+        }
+
+        return data_get($this->token, "resource_access.$resource.roles");
+    }
+
+    public function getNameAttribute()
+    {
+        return data_get($this->attributes, 'token.name');
+    }
 }

@@ -13,7 +13,12 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-Route::get('/test', function () {
-    dd('test');
-});
+Route::middleware(['auth:api', 'hasRole:manage-account'])->get('/user', function (Request $request) {
+    $user = $request->user();
 
+    return response()->json([
+        'name' => $user->name,
+        'roles' => $user->roles()
+    ]);
+
+});
