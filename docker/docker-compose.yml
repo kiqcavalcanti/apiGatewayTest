@@ -26,9 +26,9 @@ services:
     image: postgres:14.5
     volumes:
       - kong_postgres_data:/var/lib/postgresql/data
-    deploy:
-      restart_policy:
-        condition: on-failure
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
     networks:
       - kong-fc
     environment:
@@ -49,9 +49,9 @@ services:
   kong-migration-bootstrap:
     build:
       context: ./kong
-    deploy:
-      restart_policy:
-        condition: on-failure
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
     networks:
       - kong-fc
     depends_on:
@@ -73,9 +73,9 @@ services:
       context: ./kong
     networks:
       - kong-fc
-    deploy:
-      restart_policy:
-        condition: on-failure
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
     depends_on:
       - kong-database
     environment:
@@ -95,9 +95,9 @@ services:
       context: ./kong
     networks:
       - kong-fc
-    deploy:
-      restart_policy:
-        condition: on-failure
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
     volumes:
       - ./nginx/hosts:/etc/hosts
     depends_on:
@@ -165,11 +165,13 @@ services:
   ###
   konga:
     image: pantsel/konga
+    volumes:
+      - ./nginx/hosts:/etc/hosts
     networks:
       - kong-fc
-    deploy:
-      restart_policy:
-        condition: on-failure
+#    deploy:
+#      restart_policy:
+#        condition: on-failure
     depends_on:
       - kong-database
     environment:
@@ -192,7 +194,7 @@ services:
       context: ./php
     volumes:
       - ${PWD}/../laraveltest:/var/www/html
-    command: bash -c "composer update --no-interaction"
+    command: bash -c "composer update --no-interaction && php artisan key:generate"
     depends_on:
       - php
 
