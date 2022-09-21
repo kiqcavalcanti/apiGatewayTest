@@ -189,14 +189,19 @@ services:
     networks:
       - kong-fc
 
-  install-dependencies:
+  composer:
     build:
       context: ./php
     volumes:
       - ${PWD}/../laraveltest:/var/www/html
-    command: bash -c "composer update --no-interaction && php artisan key:generate"
-    depends_on:
-      - php
+    entrypoint: composer
+
+  artisan:
+    build:
+      context: ./php
+    volumes:
+      - ${PWD}/../laraveltest:/var/www/html
+    entrypoint: php artisan
 
   nginx:
     image: nginx:stable-alpine
