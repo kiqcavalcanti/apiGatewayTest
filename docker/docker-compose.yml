@@ -182,10 +182,10 @@ services:
   php:
     build:
       context: ./php
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ${PWD}/../laraveltest:/var/www/html
-    ports:
-      - "9000:9000"
     networks:
       - kong-fc
 
@@ -195,6 +195,8 @@ services:
     volumes:
       - ${PWD}/../laraveltest:/var/www/html
     entrypoint: composer
+    command:
+      - list
 
   artisan:
     build:
@@ -202,6 +204,8 @@ services:
     volumes:
       - ${PWD}/../laraveltest:/var/www/html
     entrypoint: php artisan
+    command:
+      - list
 
   nginx:
     image: nginx:stable-alpine
