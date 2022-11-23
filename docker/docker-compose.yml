@@ -128,6 +128,8 @@ services:
       interval: 5s
       retries: 10
     restart: on-failure
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 
   postgres:
@@ -181,6 +183,8 @@ services:
       NODE_ENV: development
     ports:
       - "1337:1337"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   php:
     build:
@@ -222,7 +226,9 @@ services:
       - php
     networks:
       kong-fc:
-        ipv4_address: 192.168.0.9
+        ipv4_address: 192.168.0.40
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   docdrive-db:
     container_name: docdrive-db
@@ -235,6 +241,8 @@ services:
       - "27017:27017"
     volumes:
       - ./mongodb-data:/data/db
+    networks:
+      - kong-fc
 
   docdrive-app:
     container_name: docdrive-app
@@ -247,6 +255,8 @@ services:
       - "8082:8082"
     depends_on:
       - docdrive-db
+    networks:
+      - kong-fc
 
   docdrive-yarn:
     build:
@@ -254,4 +264,26 @@ services:
     volumes:
       - ${PWD}/../docdrive:/app
     entrypoint: yarn
+
+  docdrive-front-yarn:
+    build:
+      context: ./node
+    volumes:
+      - ${PWD}/../docdrive-front:/app
+    entrypoint: yarn
+
+  docdrive-front:
+    container_name: docdrive-front
+    build:
+      context: ./node
+      dockerfile: Dockerfile
+    volumes:
+      - ${PWD}/../docdrive-front:/app
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "3000:3000"
+    depends_on:
+      -  docdrive-front-yarn
+    networks:
+      - kong-fc
 

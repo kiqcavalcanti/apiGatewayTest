@@ -1,5 +1,6 @@
 127.0.0.1 localhost
-192.168.0.9 laraveltest.local
-192.168.0.9 konga.local
-192.168.0.9 keycloak.local
-192.168.0.9 api.local
+192.168.0.40 laraveltest.local
+192.168.0.40 konga.local
+192.168.0.40 keycloak.local
+192.168.0.40 docdrive-api.local
+192.168.0.40 api.local

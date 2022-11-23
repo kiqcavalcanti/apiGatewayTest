@@ -6,7 +6,7 @@
           <div
             class="shadow overflow-hidden border-b border-gray-200 m-4 sm:rounded-lg"
           >
-            <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-gray-200" v-if="!error">
               <thead class="bg-gray-50">
                 <tr>
                   <th
@@ -30,7 +30,7 @@
                 </tr>
               </thead>
 
-              <tbody class="bg-white divide-y divide-gray-200">
+              <tbody class="bg-white divide-y divide-gray-200" v-for="item of content">
                 <tr>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
@@ -43,20 +43,22 @@
                       </div>
                       <div class="ml-4">
                         <div class="text-sm font-medium text-gray-900">
-                          Sebastian Luna
+                          {{item.originalname}}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm">
-                    Admin
+                    {{item.date}}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm">
-                    Admin
                   </td>
                 </tr>
               </tbody>
             </table>
+            <div v-else>
+              {{error}}
+            </div>
           </div>
         </div>
       </div>
@@ -78,14 +80,18 @@ export default {
       },
     });
 
-    const req = request.post("http://localhost:8082/api/v1/folders", {
-      foldersIds: ["5fda61f0484f607731849850"],
+    request.get("http://api.local/docdrive/api/v1/files/5fda61f0484f607731849850")
+      .then(axiosResponse => {
+        this.content = axiosResponse.data.data.content
+      }).catch(AxiosError => {
+        this.error = AxiosError.response.data.message
     });
-    console.log(req);
   },
   data() {
     return {
       msg: "Welcome to Your Secured Vue.js App with Keycloak",
+      error: null,
+      content: []
     };
   },
 };
