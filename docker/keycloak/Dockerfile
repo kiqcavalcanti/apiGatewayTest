@@ -1,1 +1,2 @@
-FROM quay.io/keycloak/keycloak:legacy
+FROM quay.io/keycloak/keycloak:20.0.1
+CMD ["start-dev"]

@@ -1,0 +1,24 @@
+{
+  "value.converter.schema.registry.url": "http://schema-registry:8081",
+  "key.converter.schema.registry.url": "http://schema-registry:8081",
+  "name": "mysql3",
+  "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+  "tasks.max": "1",
+  "key.converter": "org.apache.kafka.connect.converters.ByteArrayConverter",
+  "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+  "transforms": [
+    "unwrap"
+  ],
+  "topics": [
+    "postgres-server.public.user_entity"
+  ],
+  "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+  "transforms.unwrap.drop.tombstones": "false",
+  "connection.url": "jdbc:mysql://mysql3:3306/default",
+  "connection.user": "root",
+  "connection.password": "root",
+  "dialect.name": "MySqlDatabaseDialect",
+  "auto.create": "true",
+  "auto.evolve": "true"
+}
+

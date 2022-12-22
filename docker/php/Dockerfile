@@ -16,7 +16,7 @@ RUN set -ex \
     && echo "xdebug.discover_client_host=0" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 
 
-RUN docker-php-ext-install pdo pdo_pgsql
+RUN docker-php-ext-install mysqli pdo pdo_mysql && docker-php-ext-enable pdo_mysql
 
 
 
